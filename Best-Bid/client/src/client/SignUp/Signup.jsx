@@ -1,12 +1,17 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import "./signupstyle.scss";
 import { useState } from 'react';
+import axios from 'axios';
 import login from '../images/login.svg';
 import register from '../images/register.svg';
 import 'font-awesome/css/font-awesome.min.css';
 import { NavLink, useHistory } from 'react-router-dom';
-import  {UserContext} from '../../App';
+import { UserContext } from '../../App';
 import { useAlert } from 'react-alert';
+import { auth, provider } from "../../firebase"
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
+import { signInWithPopup } from 'firebase/auth';
+import { FaRegistered } from 'react-icons/fa';
 
 
 // import {RiLockPasswordFill} from 'react-icons/ri';
@@ -14,105 +19,171 @@ import { useAlert } from 'react-alert';
 
 const Signup = () => {
   const alert = useAlert();
-
-const {state, dispatch} = useContext(UserContext);
-
-  const [flag, setFlag] = useState(1);
+  const { state, dispatch } = useContext(UserContext);
+  const [flag, setFlag] = useState(0);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [google, setGoogle] = useState("");
   const history = useHistory();
 
   //  signUp page 
   const [user, setUser] = useState({
     name: "", email: "", phone: "", password: "", cpassword: ""
   });
+  // , 
 
   let name, value;
 
   const handleInputs = (e) => {
-    console.log(e);
-    name = e.target.name;
-    value = e.target.value;
-
+    const { name, value } = e.target
     setUser({ ...user, [name]: value });
   }
 
   const PostData = async (e) => {
     e.preventDefault();
+    //Sending to Database
 
     const { name, email, phone, password, cpassword } = user;
 
-    const res = await fetch("/register", {
-      method: "POST",
+    await axios.post("http://localhost:5000/register", {
       headers: {
         "Content-type": "application/json"
       },
-      body: JSON.stringify({
-        name, email, phone, password, cpassword
+      body: {
+        name, email, phone: '012346', password, cpassword
+      }
+
+    }).then(async (res) => {
+      await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      ).then((user) => {
+        alert.success("Registerd Successfuly")
+        setFlag(!flag)
+      }).catch((err) => {
+        console.log(err)
+        alert.error("Registerd Unsuccessfuly ")
       })
-
-    });
-
-    const data = await res.json();
-console.log(data);
-    if (res.status === 400 || !data) {
-      // window.alert("Invalid Regestration");
-      alert.error(data.error);
-      console.log(data);
-    } else {
-      // window.alert("Regestration Successful");
-      alert.success("Regestration Successful");
-
-      console.log("Regestration Successful");
-
-      setFlag(!flag);
-    }
-
+    }).catch((error) => {
+      console.log(error)
+      alert.error(error.response.data.error)
+    })
 
 
   }
   // SignUp page End
 
 
-// signin Page
+  // signin Page
 
-const [email , setEmail] = useState('');
-const [password , setPassword] = useState('');
+  const loginUser = async (e) => {
 
+    //   if(this.state.value.length < 8) {
+    //     return false;
+    // }
 
-const loginUser =async (e) =>{
+    e.preventDefault();
+    signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        // Signed in 
+        const user = userCredential.user;
+        localStorage.setItem('user', JSON.stringify(user));
+        history.push('/')
+        // ...
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log(errorCode)
+        alert.error(errorMessage)
+      });
+    // const res = await fetch('/signin', {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-type": "application/json"
+    //   },
+    //   body: {
+    //     email,
+    //     password
+    //   }
+    // });
 
-//   if(this.state.value.length < 8) {
-//     return false;
-// }
+    // const data = res.json();
 
-  e.preventDefault();
-  const res = await fetch('/signin' , {
-    method: "POST",
-    headers: {
-      "Content-type": "application/json"
-    },
-    body:JSON.stringify({
-      email,
-      password
-    })
-  });
+    // if (res.status === 400 || !data) {
+    //   // window.alert("Invalid Credential");
+    //   alert.error("Invalid Credential");
 
-  const data = res.json();
+    // } else {
+    //   dispatch({ type: "USER", payload: true });
+    //   // window.alert("login Successful");
+    //   alert.success("login Successful");
 
-  if(res.status === 400 || !data){
-    // window.alert("Invalid Credential");
-    alert.error("Invalid Credential");
+    //   history.push('/');
 
-  }else{
-    dispatch({type:"USER" , payload:true});
-    // window.alert("login Successful");
-    alert.success("login Successful");
-
-    history.push('/');
+    // }
 
   }
 
+  //Google Authentication
+  // const handleGoogle = () => {
+  //   console.log("google auth");
+  //   signInWithPopup(auth, provider).then((data) => {
+  //     setGoogle(data.user.email)
+  //     localStorage.setItem("email", data.user.email)
+  //     history.push("/")
+  //   })
+  // }
+  // useEffect(() => {
+  //   setGoogle(localStorage.getItem("email"))
 
-}
+  // }, [])
+
+  const handleGoogle = async (e) => {
+    e.preventDefault();
+     await signInWithPopup(
+        auth,
+        provider
+      ).then((response) => {
+        const data = response.user;
+        axios.post("http://localhost:5000/google",  data )
+      })
+        .then((user) => {
+          alert.success("Registered successfully")
+          setFlag(!flag)
+        }).catch((err) => {
+          console.log(err)
+          alert.error("Registered unsuccessfully")
+        }).catch((error) => {
+      console.log(error)
+      alert.error(error.response.data.error)
+    })
+
+    // signInWithPopup(auth, provider).then((data) => {
+    //   const email = data.user.email;
+    //   axios.post("http://localhost:5000/register", { email })  // Sending data to the backend
+    //     .then(response => {
+    //       history.push("/");
+    //     })
+    //     .catch((err) => {
+    //       // Handle error
+    //       console.log(err)
+    //       alert.error("Registerd Unsuccessfuly ")
+    //     });
+    // });
+  }
+
+  useEffect(() => {
+    axios.get("http://localhost:5000/register")
+      .then(response => {
+        setGoogle(response.data.email);
+      })
+      .catch(error => {
+        // Handle error
+      });
+  }, []);
+
 
   return (
     <>
@@ -121,19 +192,19 @@ const loginUser =async (e) =>{
         <div className='row'>
           <div className='col-10 mx-auto'>
 
-{/* Sign in */}
-            <div className={`container ${flag ?  'sign-up-mode' : null }`}>
+            {/* Sign in */}
+            <div className={`container ${flag ? 'sign-up-mode' : null}`}>
               <div className="forms-container">
                 <div className="signin-signup">
                   <form method='POST' className="sign-in-form">
                     <h2 className="title">Sign in</h2>
                     <div className="input-field">
                       <i className="fas fa-user"></i>
-                      <input type="email" placeholder="Email" name='email' autoComplete='off' value={email} onChange={(e) => setEmail(e.target.value)}/>
+                      <input type="email" placeholder="Email" name='email' autoComplete='off' value={email} onChange={(e) => setEmail(e.target.value)} />
                     </div>
                     <div className="input-field">
                       <i className="fas fa-lock"></i>
-                      <input type="password" placeholder="Password" name='password' autoComplete='off' value={password} onChange={(e) => setPassword(e.target.value)}/>
+                      <input type="password" placeholder="Password" name='password' autoComplete='off' value={password} onChange={(e) => setPassword(e.target.value)} />
                     </div>
                     <input type="submit" value="Login" className="btn solid" name='signin' onClick={loginUser} />
                     <p className="social-text">Or Sign in with social platforms</p>
@@ -170,23 +241,25 @@ const loginUser =async (e) =>{
                       <input type="email" name="email" placeholder="Email" autoComplete='off'
                         value={user.email}
                         onChange={handleInputs}
+                        required
                       />
                     </div>
 
-                    <div className="input-field">
+                    {/* <div className="input-field">
                       <i className="fas fa-envelope"></i>
                       <input type="tel" name="phone" placeholder="Phone Number" autoComplete='off' pattern="[0-9]{10}"
                         value={user.phone}
                         onChange={handleInputs}
                       />
 
-                    </div>
+                    </div> */}
 
                     <div className="input-field">
                       <i className="fas fa-lock"></i>
                       <input type="password" name="password" placeholder="Password" autoComplete='off'
                         value={user.password}
                         onChange={handleInputs}
+                        required
                       />
                     </div>
 
@@ -195,6 +268,7 @@ const loginUser =async (e) =>{
                       <input type="password" name="cpassword" placeholder="Conform Password" autoComplete='off'
                         value={user.cpassword}
                         onChange={handleInputs}
+                        required
                       />
                     </div>
 
@@ -203,13 +277,13 @@ const loginUser =async (e) =>{
                     <p className="social-text">Or Sign up with social platforms</p>
                     <div className="social-media">
                       <a href="#" class="social-icon">
-                        <i className="fab fa-facebook-f"></i>
+                        <i className="fab fa-facebook-f"  ></i>
                       </a>
                       <a href="#" className="social-icon">
                         <i className="fab fa-twitter"></i>
                       </a>
                       <a href="#" className="social-icon">
-                        <i className="fab fa-google"></i>
+                        <i onClick={handleGoogle} className="fab fa-google"></i>
                       </a>
                       <a href="#" className="social-icon">
                         <i className="fab fa-linkedin-in"></i>
@@ -260,4 +334,4 @@ const loginUser =async (e) =>{
   );
 };
 
-export default Signup;
+export default Signup; 

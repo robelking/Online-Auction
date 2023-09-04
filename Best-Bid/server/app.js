@@ -1,5 +1,5 @@
 const dotenv = require('dotenv');
-const  mongoose = require('mongoose');
+const mongoose = require('mongoose');
 const express = require("express");
 const app = express();
 const cookieParser = require("cookie-parser");
@@ -7,9 +7,9 @@ const cloudinary = require("cloudinary");
 
 const bodyParser = require("body-parser");
 const fileUpload = require("express-fileupload");
-const cors=require("cors");
-const stripe=require("stripe")("sk_test_51KVzMySFWvR6XE1YibTsOQVGXXVtCjUY2IvNlXEbzlCTOb0hkngXsvAI2kcExNchbesK4jiTv4cpPCOjMHN7jYgF00TjjjozYy")
-const uuid=require("uuid");
+const cors = require("cors");
+const stripe = require("stripe")("sk_test_51KVzMySFWvR6XE1YibTsOQVGXXVtCjUY2IvNlXEbzlCTOb0hkngXsvAI2kcExNchbesK4jiTv4cpPCOjMHN7jYgF00TjjjozYy")
+const uuid = require("uuid");
 
 
 dotenv.config({ path: './config.env' });
@@ -22,8 +22,8 @@ require('./db/conn');
 
 
 cloudinary.config({
-    cloud_name : process.env.CLOUDINARY_NAME,
-    api_key : process.env.CLOUDINARY_API_KEY,
+    cloud_name: process.env.CLOUDINARY_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 // const User = require('./model/userSchema');
@@ -31,13 +31,16 @@ cloudinary.config({
 // app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(express.json({ limit: "50mb" }));
 app.use(cookieParser());
-app.use(bodyParser.urlencoded({ limit: "50mb", extended:true }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(fileUpload());
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:3000', // Replace with your trusted frontend domain(s)
+    credentials: true
+}));
 
 
 // HANDLING UNCAUGHT EXCEPTION -> CONSOLE.LOG(UNDEFINE VARIABLE)
-process.on("uncaughtException" , err => {
+process.on("uncaughtException", err => {
     console.log(`Error : ${err}`);
     console.log(` Server is closing due to Handling Uncaught Error Exception`);
 
@@ -71,32 +74,32 @@ app.use(require('./middleware/error'));
 //     res.send("Services");
 // });
 
-app.post("/payment"), (req,res)=>{
-    const {items, token}=req.body;
+app.post("/payment"), (req, res) => {
+    const { items, token } = req.body;
     console.log("PRODUCT", items);
-    console.log("PRICE",items.price);
-    const idempotencykey=uuid() //user can't charge twice
+    console.log("PRICE", items.price);
+    const idempotencykey = uuid() //user can't charge twice
 
     return stripe.customers.create({
         email: token.email,
         source: token.id
-    }).then(customer=>{
+    }).then(customer => {
         stripe.charges.create({
             amount: items.price,
             currency: 'usd',
-            customer: customer.id, 
+            customer: customer.id,
             receipt_email: token.email,
             description: `Buy items.name`,
-            shipping:{
-                name: token.card.name, 
-                address:{
-                    country:token.card.address_country
+            shipping: {
+                name: token.card.name,
+                address: {
+                    country: token.card.address_country
                 }
             }
-        },{idempotencykey})
+        }, { idempotencykey })
     })
-    .then(result=>res.status(200).json(result))
-    .catch(err=>console.log(err))
+        .then(result => res.status(200).json(result))
+        .catch(err => console.log(err))
 }
 
 
@@ -130,7 +133,7 @@ const server = app.listen(PORT, () => {
 
 
 // UNHANDLED PROMISE REJECTION ->> IF .ENV CONFIG FILE CHANGE
-process.on("unhandledRejection" , err => {
+process.on("unhandledRejection", err => {
     console.log(`Error : ${err.message}`);
     console.log(`Config file problem sutting down server due to unhandled promise rejection`);
 

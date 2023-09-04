@@ -13,31 +13,33 @@ router.get('/', (req, res) => {
 });
 
 router.post('/register', async (req, res) => {
-
-    const { name, email, phone, password, cpassword } = req.body;
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+    const { name, email, phone, password, cpassword } = req.body.body;
 
     if (!name || !email || !phone || !password || !cpassword) {
         return res.status(400).json({ error: "Fill all Require Feild Properly " });
     }
 
-    if(password.length < 8) {
+    if (password.length < 8) {
         return res.status(400).json({ error: "password should be minimum 8 characters" });
-}
-
+    }
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: "Incorrect Email format" });
+    }
     try {
 
         const userExist = await User.findOne({ email: email });
 
-
-
         if (userExist) {
             return res.status(400).json({ error: "Email already exist" });
-        } else if (password != cpassword) {
+        }
+        else if (password != cpassword) {
             return res.status(400).json({ error: "password is not matching" })
 
-        } else {
+        }
+        else {
 
-            const user = new User({ name, email, phone, password, cpassword });
+            const user = new User({ name, email, phone });
 
             // Hashing is Used
 
@@ -60,6 +62,38 @@ router.post('/register', async (req, res) => {
 
 
 });
+//Google Auth
+
+router.post('/google', async (req, res) => {
+    // const eventData = req.body; // Assuming Firebase sends data in the request body
+
+    // Process eventData, extract email and verification status
+    // const { email, emailVerified } = eventData;
+
+    // Store data in MongoDB
+    const { email } = req.body.body;
+    const User = mongoose.model('User', {
+        email: String,
+        emailVerified: Boolean
+    });
+    try {
+        const userExist = await User.findOne({ email: email });
+
+        if (userExist) {
+            return res.status(400).json({ error: "Email already exist" });
+        } else {
+            const newUser = new User({ email, emailVerified });
+            newUser.save();
+
+            res.status(201).send('Registered successfully');
+        }
+    }
+    catch (err) {
+        console.log(err);
+    }
+
+
+});
 
 
 //signin
@@ -74,10 +108,10 @@ router.post('/signin', async (req, res) => {
             return res.status(400).json({ error: "invalid credentials" });
         }
 
-          if(password.length < 8) {
+        if (password.length < 8) {
             return res.status(400).json({ error: "invalid credentials" });
-}
-console.log(password.length);
+        }
+        console.log(password.length);
         const userLogin = await User.findOne({ email: email });
 
 
@@ -93,7 +127,7 @@ console.log(password.length);
             } else {
                 token = await userLogin.generateAuthToken();
                 console.log(token);
-                
+
                 res.cookie("jwtoken", token, {
                     expires: new Date(Date.now() + 25892000000),
                     httpOnly: true
@@ -119,17 +153,19 @@ console.log(password.length);
 // ABOUT US PAGE ROUTE
 // we have to use authenticatrion middleware at about page -> inserting authenticate function inside thi app.get function
 
-router.get('/about', authenticate , (req, res) => {
+router.get('/about', (req, res) => {
     console.log(`about us page`);
     // req.rootUser -> Sending Currently logged in person profile 
-    res.send(req.rootUser);
+    // res.send(req.rootUser);
+    const userData = { user: 'robel', email: 'example@gmail.com', phone: 12345678, }
+    res.send(userData);
 });
 
 
 
 // FOR GET USERDATA
 
-router.get('/getdata', authenticate , (req, res) => {
+router.get('/getdata', authenticate, (req, res) => {
     console.log(`about us page`);
     // req.rootUser -> Sending Currently logged in person profile 
     res.send(req.rootUser);
@@ -138,32 +174,32 @@ router.get('/getdata', authenticate , (req, res) => {
 
 //CHANGE PASSWORD ROUTE
 
-router.put('/password/update', authenticate , async (req, res) => {
+router.put('/password/update', authenticate, async (req, res) => {
 
     // req.rootUser -> Sending Currently logged in person profile 
-    try{
+    try {
 
-   const user = await User.findById( req.userID ).select("+password");
+        const user = await User.findById(req.userID).select("+password");
 
-//   const isPasswordMatched = await bcrypt.compare(password, userLogin.password);
-// req.body.oldPassword
+        //   const isPasswordMatched = await bcrypt.compare(password, userLogin.password);
+        // req.body.oldPassword
 
-const isPasswordMatched = await bcrypt.compare(req.body.oldPassword , user.password);
+        const isPasswordMatched = await bcrypt.compare(req.body.oldPassword, user.password);
 
-   if(!isPasswordMatched){
-    res.status(400).json({ error: "old password incorrect" });
-   }
+        if (!isPasswordMatched) {
+            res.status(400).json({ error: "old password incorrect" });
+        }
 
 
-   if( req.body.newPassword !==req.body.confirmPassword){
-    res.status(400).json({ error: "Password does not matched" });
-   }
+        if (req.body.newPassword !== req.body.confirmPassword) {
+            res.status(400).json({ error: "Password does not matched" });
+        }
 
-   user.password =req.body.newPassword;
+        user.password = req.body.newPassword;
 
-   await user.save();
+        await user.save();
 
-   res.status(200).send(req.token);
+        res.status(200).send(req.token);
 
 
 
@@ -179,29 +215,29 @@ const isPasswordMatched = await bcrypt.compare(req.body.oldPassword , user.passw
 
 //UPDATE USER PROFILE
 
-router.put('/me/update', authenticate , async (req, res) => {
-console.log(req.body.name , req.body.email ,req.body.phone  );
+router.put('/me/update', authenticate, async (req, res) => {
+    console.log(req.body.name, req.body.email, req.body.phone);
     // req.rootUser -> Sending Currently logged in person profile 
-    try{
+    try {
 
-const newUserData = {
+        const newUserData = {
 
-    name: req.body.name,
-    email: req.body.email,
-    phone: req.body.phone,
+            name: req.body.name,
+            email: req.body.email,
+            phone: req.body.phone,
 
-}
-
-
-
-   const user = await User.findByIdAndUpdate( req.userID , newUserData, {
-       new: true,
-       runValidators : true,
-       userFindAndModify : false,
-   } );
+        }
 
 
-   res.status(200).json({success : true});
+
+        const user = await User.findByIdAndUpdate(req.userID, newUserData, {
+            new: true,
+            runValidators: true,
+            userFindAndModify: false,
+        });
+
+
+        res.status(200).json({ success: true });
 
 
 
@@ -225,39 +261,39 @@ const newUserData = {
 
 
 // CONTACT US PAGE 
-router.post('/contact',authenticate , async (req, res) => {
-    const {name, email, subject, message} = req.body;
-    
+router.post('/contact', authenticate, async (req, res) => {
+    const { name, email, subject, message } = req.body;
+
     // console.log(`pre testing`);
     // console.log(name);
     // console.log(email);
     // console.log(subject);
 
     // console.log(message);
-try {
+    try {
 
-    const {name, email, subject, message} = req.body;
+        const { name, email, subject, message } = req.body;
 
-    if( !name || !email || !subject || !message ){
-        console.log("Error in ciontact form at server side");
-        return res.json({ error: "All Feilds must be filled"});
+        if (!name || !email || !subject || !message) {
+            console.log("Error in ciontact form at server side");
+            return res.json({ error: "All Feilds must be filled" });
+        }
+
+
+        const userContact = await User.findOne({ _id: req.userID });
+
+        if (userContact) {
+
+            const userMessage = await userContact.addMessage(name, email, subject, message);
+
+            await userContact.save();
+
+            res.status(201).json({ message: "User Contact Form Saved Successfully" });
+        }
+
+    } catch (error) {
+        console.log(`auth file error : ${error}`);
     }
-
-
-    const userContact = await User.findOne({_id:req.userID});
-
-    if(userContact){
-
-        const userMessage = await userContact.addMessage(name, email, subject, message);
-
-        await userContact.save();
-
-        res.status(201).json({message : "User Contact Form Saved Successfully"});
-    }
-    
-} catch (error) {
-    console.log(`auth file error : ${error}`);
-}
 
 });
 
@@ -265,39 +301,39 @@ try {
 
 // FEEDBACK PAGE
 
-router.post('/feedback',authenticate , async (req, res) => {
-    const {name, email, subject, message} = req.body;
-    
+router.post('/feedback', authenticate, async (req, res) => {
+    const { name, email, subject, message } = req.body;
+
     // console.log(`pre testing`);
     // console.log(name);
     // console.log(email);
     // console.log(subject);
 
     // console.log(message);
-try {
+    try {
 
-    const {name, email, subject, message} = req.body;
+        const { name, email, subject, message } = req.body;
 
-    if( !name || !email || !subject || !message ){
-        console.log("Error in Feedback form at server side");
-        return res.json({ error: "All Feilds must be filled"});
+        if (!name || !email || !subject || !message) {
+            console.log("Error in Feedback form at server side");
+            return res.json({ error: "All Feilds must be filled" });
+        }
+
+
+        const userContact = await User.findOne({ _id: req.userID });
+
+        if (userContact) {
+
+            const userMessage = await userContact.addFeedback(name, email, subject, message);
+
+            await userContact.save();
+
+            res.status(201).json({ message: "User FeedBack Form Saved Successfully" });
+        }
+
+    } catch (error) {
+        console.log(`auth file error : ${error}`);
     }
-
-
-    const userContact = await User.findOne({_id:req.userID});
-
-    if(userContact){
-
-        const userMessage = await userContact.addFeedback(name, email, subject, message);
-
-        await userContact.save();
-
-        res.status(201).json({message : "User FeedBack Form Saved Successfully"});
-    }
-    
-} catch (error) {
-    console.log(`auth file error : ${error}`);
-}
 
 });
 
@@ -307,10 +343,10 @@ try {
 // LOGOUT PAGE FUNCTIONALITY
 // IN LOGOUT FUNCTIONALITY -> DELETE AVTIVE COOKIE -> USE LOOGED OUT
 
-router.get('/logout' , (req, res) => {
+router.get('/logout', (req, res) => {
 
     console.log(`logout page from server`);
-    res.clearCookie('jwtoken' , {path:'/'});
+    res.clearCookie('jwtoken', { path: '/' });
     res.status(200).send(`User Logout`);
 
 
