@@ -3,90 +3,62 @@ const ErrorHander = require("../utils/errorHander");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const ApiFeatures = require("../utils/apifeatures");
 const cloudinary = require("cloudinary");
-
-
-
-
+const admin = require('firebase-admin');
+const serviceAccount = require("../credentials.json");
 const jwt = require("jsonwebtoken");
 const User = require("../model/userSchema");
 
-// const authenticate = require("../middleware/authenticate");
-// req.rootUser
-// CREATE PRODUCT -->> WORKING
-exports.createProduct = catchAsyncErrors(async  (req ,res , next) => {
+
+exports.createProduct = catchAsyncErrors(async (req, res) => {
     console.log(`Create Product Function from Route Called`);
-
-
-try {
-    // HERE WE GET CURRENT TOKEN FROM JWT TOKEN
-const token =  req.cookies.jwtoken;
-    const verifyToken = jwt.verify(token , process.env.SECRET_KEY);
-const rootUser  = await User.findOne({ _id: verifyToken._id , "tokens.token": token});
-if(!rootUser){    throw new Error('User Not Found')}
-req.token = token;
-req.rootUser = rootUser;
-req.userID = rootUser._id;
-} catch (err) {
-    console.log(`error token verification`);
-    res.status(401).send('Unorthorised: No token provided');
-}
-
-let images = [];
-
-if (typeof req.body.images === "string") {
-    // Single Image recived
-
-    images.push(req.body.images);
-
-}
-else {
-
-    images = req.body.images;
-
-}
-
-const imagesLink = [];
-
-for (let i = 0; i < images.length; i++) {
-    
-    const result = await cloudinary.v2.uploader.upload( images[i], {
-        folder:"products",
-    } );
-
-imagesLink.push({
-    public_id:result.public_id,
-        url: result.secure_url,
-});
-
-}
-
-// Uploaded on cloudinary and  links of that images  added into  database
-req.body.images = imagesLink;
-
-
-// console.log(ob2);
-console.log(req.body);
-
-    // const product = await Product.create(req.body);
-
-    let product = new Product(req.body);
-    product.seller= req.userID;
-
-    await product.save();
-
-    // ADD ROW OF SELLER ID AFTER CREATION -> WE DONT HAVE  -> sSEND ID FROM FRONT END
-
-    res.status(201).json({
-        success:true,
-        product
-    });
-
-});
+  
+    try {
+  
+      // Continue with your code to create the product
+      let images = [];
+  
+      if (typeof req.body.images === 'string') {
+        // Single Image received
+        images.push(req.body.images);
+      } else {
+        images = req.body.images;
+      }
+  
+      const imagesLink = [];
+  
+      for (let i = 0; i < images.length; i++) {
+        const result = await cloudinary.v2.uploader.upload(images[i], {
+          folder: 'products',
+        });
+  
+        imagesLink.push({
+          public_id: result.public_id,
+          url: result.secure_url,
+        });
+      }
+  
+      // Uploaded on Cloudinary, and links of those images added to the database
+      req.body.images = imagesLink;
+  
+      // Create the product with the authenticated user as the seller
+      let product = new Product(req.body);
+      product.seller = req.userID;
+      await product.save();
+  
+      res.status(201).json({
+        success: true,
+        product,
+      });
+    } catch (err) {
+      console.error('Error verifying Firebase ID token:', err);
+      res.status(401).send('Unauthorized: No valid token provided');
+    }
+  });
 
 
 
 // GET ALL PRODUCT ->> WORKING 
-exports.getAllProducts = catchAsyncErrors(async (req,res, next) => {
+exports.getAllProducts = catchAsyncErrors(async (req,res) => {
 // API FEATURE TAKES -> QUERY & QUERYSTR
     const resultPerPage = 9;
 const productCount = await Product.countDocuments({ 'bidEnd': { $gt: new Date() }});
@@ -139,7 +111,6 @@ for(let i = 0 ; i<product.images.length ; i++){
 
 }
 
-
 const imagesLink = [];
 
 for (let i = 0; i < images.length; i++) {
@@ -157,11 +128,7 @@ imagesLink.push({
 
 req.body.images = imagesLink;
 
-
-
 }
-
-
 
     product = await Product.findByIdAndUpdate(req.params.id , req.body , {
         new:true,
@@ -174,6 +141,7 @@ req.body.images = imagesLink;
         product
     });
 });
+
 
 // TO DELETE PRODUCT -->> WORKING
 exports.deleteProduct = catchAsyncErrors(async (req , res , next) => {
@@ -193,79 +161,43 @@ exports.deleteProduct = catchAsyncErrors(async (req , res , next) => {
 });
 
 
-
-
-//GET MY PRODUCTS
-exports.getMyProducts = catchAsyncErrors(async (req,res) => {
-  
+exports.getMyProducts = catchAsyncErrors(async (req, res) => {
     try {
-        // HERE WE GET CURRENT TOKEN FROM JWT TOKEN
-    const token =  req.cookies.jwtoken;
-        const verifyToken = jwt.verify(token , process.env.SECRET_KEY);
-    const rootUser  = await User.findOne({ _id: verifyToken._id , "tokens.token": token});
-    if(!rootUser){    throw new Error('User Not Found')}
-    req.token = token;
-    req.rootUser = rootUser;
-    req.userID = rootUser._id;
-    } catch (err) {
-        console.log(`error token verification`);
-        res.status(401).send('Unorthorised: No token provided');
-    }
-
-
-
-    let sellerproducts = await Product.find({seller: req.userID}).populate('seller', '_id name phone').populate('bids.bidder', '_id name phone');
-
-    console.log(`myProduct page Called`);
-    res.status(200).json({
-        success:true,
-        sellerproducts
-        });
-    
-    });
-
-
-
-
-
-
-
-    //GET MY BIDDDED PRODUCT ->> BID STATUS
-    // getBiddedProduct
-
-    exports.getBiddedProduct = catchAsyncErrors(async (req,res) => {
+      
+      // Continue with your code to fetch seller products
+      let sellerproducts = await Product.find({ seller: req.userID })
+        .populate('seller', '_id name phone')
+        .populate('bids.bidder', '_id name phone');
   
-        console.log(`get Bidded product Page called`);
+      console.log('myProduct page Called');
+      res.status(200).json({
+        success: true,
+        sellerproducts,
+      });
+    } catch (err) {
+      console.error('Error verifying Firebase ID token:', err);
+      res.status(401).send('Unauthorized: No valid token provided');
+    }
+  });
+
+  exports.getBiddedProduct = catchAsyncErrors(async (req, res) => {
         try {
-            // HERE WE GET CURRENT TOKEN FROM JWT TOKEN
-        const token =  req.cookies.jwtoken;
-            const verifyToken = jwt.verify(token , process.env.SECRET_KEY);
-        const rootUser  = await User.findOne({ _id: verifyToken._id , "tokens.token": token});
-        if(!rootUser){    throw new Error('User Not Found')}
-        req.token = token;
-        req.rootUser = rootUser;
-        req.userID = rootUser._id;
-        } catch (err) {
-            console.log(`error token verification`);
-            res.status(401).send('Unorthorised: No token provided');
-        }
-    
-    
-    
-        let myproducts = await Product.find({ "bids.bidder" : req.userID }).populate('seller', '_id name phone').populate('bids.bidder', '_id name phone');
-    
-        res.status(200).json({
-            success:true,
-            myproducts
-            });
         
-        });
-
-
-
-
-
-
+          
+          // Continue with your code to fetch bidded products
+          let myproducts = await Product.find({ 'bids.bidder': req.userID })
+            .populate('seller', '_id name phone')
+            .populate('bids.bidder', '_id name phone');
+      
+          res.status(200).json({
+            success: true,
+            myproducts,
+          });
+        } catch (err) {
+          console.error('Error verifying Firebase ID token:', err);
+          res.status(401).send('Unauthorized: No valid token provided');
+        }
+      });
 
 // GET PRODUCT DETAILS
 exports.getProductDetails = catchAsyncErrors(async (req , res , next) => {
@@ -274,23 +206,13 @@ exports.getProductDetails = catchAsyncErrors(async (req , res , next) => {
     const sellerDetails = product.seller;
 
 
-
 // Bid Winner
 // // const bidWinnner = await Product.find({_id : req.params.id}).sort({"bids.bid" : -1}).limit(1).populate('bids.bidder', '_id name phone');
 // var countdownDate = new Date(product.bidEnd).getTime();
 //       var now = new Date().getTime();
 
 var winStatus;
-// if(countdownDate > now ){
-    
 
-
-
-// console.log(`Auctiion Not Ended`);
-// winStatus = "Auction is Currently Active";
-// }
-// else{
-    // }
     const bidWinnner = product.bids;
 
     var maxWin = Math.max.apply(Math, bidWinnner.map(function(o) { return o.bid; }));
@@ -310,9 +232,7 @@ var winStatus;
     });
     
      winStatus = result;
-    
-    
-     
+
     // console.log(result.bidder);
     // console.log(result.bidder.phone);
     // console.log(result.bidder.email);

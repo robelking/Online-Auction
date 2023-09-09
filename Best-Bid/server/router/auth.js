@@ -82,8 +82,9 @@ router.post('/google', async (req, res) => {
         if (userExist) {
             return res.status(400).json({ error: "Email already exist" });
         } else {
-            const newUser = new User({ email, emailVerified });
-            newUser.save();
+            const newUser = new User({ email });
+            
+            await newUser.save();
 
             res.status(201).send('Registered successfully');
         }

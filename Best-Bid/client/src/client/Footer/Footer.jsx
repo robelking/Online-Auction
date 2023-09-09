@@ -6,6 +6,7 @@ import {AiOutlineRight , AiFillTwitterCircle} from 'react-icons/ai';
 import {AiFillLinkedin} from 'react-icons/ai';
 
 import {FiTwitter , FiFacebook , FiInstagram , FiMail} from 'react-icons/fi';
+import api from '../../axiosInstance'
 // import {BsFacebook} from 'react-icons/bs';
 // import {FaInstagramSquare} from 'react-icons/fa';
 // import {CgMail} from 'react-icons/cg';
@@ -22,12 +23,7 @@ const Footer = () => {
   const userContact = async () => {
 
     try {
-      const res = await fetch('/getdata', {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json"
-        },
-      });
+      const res = await api.get('/getdata');
       const data = await res.json();
       // console.log(data);
       setUserData({ ...userData, name: data.name, email: data.email });

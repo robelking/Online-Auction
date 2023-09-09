@@ -1,12 +1,13 @@
 const express = require('express');
 const { getAllProducts , createProduct, updateProduct, deleteProduct, getProductDetails, getMyProducts, placeBidOnProduct, getBiddedProduct} = require("../controllers/productController");
+const authenticate = require('../middleware/authenticate');
 const router = express.Router();
 require('../db/conn');
 
 
 // CREATE PRODUCT ->> STORE USER ID WITH THIS
 
-router.route("/product/new").post(createProduct);
+router.route("/product/new").post(authenticate, createProduct);
 
 
 
@@ -19,13 +20,13 @@ router.route("/products").get(getAllProducts);
 router.route("/product/:id").put(updateProduct).delete(deleteProduct).get(getProductDetails);
 
 // GET MY  PRODUCTS
-router.route("/products/myproducts").get(getMyProducts);
+router.route("/products/myproducts").get(authenticate, getMyProducts);
 
 
 
 
 // GET BIDDED PRODUCT ->> BID STATUS
-router.route("/products/bidstatus").get(getBiddedProduct);
+router.route("/products/bidstatus").get(authenticate ,getBiddedProduct);
 
 
 // PLACE BID ON PRODUCT

@@ -13,7 +13,7 @@ import MetaData from '../MetaData/MetaData';
 import StripeCheckout from "react-stripe-checkout";
 import { MdVerified , 
   MdOutlinePayment } from 'react-icons/md';
-
+import api from '../../axiosInstance'
 
 import "./productdetails.scss";
 import 'swiper/css';
@@ -63,12 +63,7 @@ const {product , loading , error , sellerDetails ,  winStatus} = useSelector((st
 const userContact = async () => {
 
   try {
-    const res = await fetch('/getdata', {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      },
-    });
+    const res = await api.get('/getdata');
     const data = await res.json();
     console.log(`id is ${data._id}`);
     // console.log(`data send to backend`);

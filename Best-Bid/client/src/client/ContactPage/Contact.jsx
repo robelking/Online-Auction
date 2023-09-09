@@ -3,7 +3,7 @@ import "./contactstyle.scss";
 import MetaData from '../MetaData/MetaData';
 import { HiLocationMarker } from 'react-icons/hi';
 import { MdEmail} from 'react-icons/md';
-
+import api from '../../axiosInstance'
 
 
 
@@ -17,13 +17,8 @@ const Contact = () => {
 
   const userContact = async () => {
 
-    try {
-      const res = await fetch('/getdata', {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json"
-        },
-      });
+    try { 
+      const res = await api.get('/getdata');
       const data = await res.json();
       console.log(data);
       setUserData({ ...userData, name: data.name, email: data.email });

@@ -24,6 +24,8 @@ import {
        SELLER_PRODUCT_FAIL,
 } from "../constants/productConstants";
 
+import api from '../axiosInstance'
+
 export const getProduct = (keyword="" , currentPage=1 , price = [0, 2500000] , category) => async (dispatch) => {
     try {  
         
@@ -35,7 +37,7 @@ if(category){
     link = `/products?keyword=${keyword}&page=${currentPage}&startingBid[gte]=${price[0]}&startingBid[lt]=${price[1]}&category=${category}`;
 }
 
-const {data} = await axios.get(link);
+const {data} = await api.get(link);
 
 dispatch({
     type:ALL_PRODUCT_SUCCESS,
@@ -60,7 +62,7 @@ export const getProductDetails = (id) => async (dispatch) => {
         
 dispatch({ type:PRODUCT_DETAILS_REQUEST });
 
-const {data} = await axios.get(`/product/${id}`);
+const {data} = await api.get(`/product/${id}`);
 
 dispatch({
     type:PRODUCT_DETAILS_SUCCESS,
@@ -93,7 +95,7 @@ headers: {"Content-Type":"application/json"},
 };
 
 
-const {data} = await axios.post(`/product/new`,
+const {data} = await api.post(`/product/new`,
 productData,
 config
 );
@@ -127,7 +129,7 @@ dispatch({ type:DELETE_PRODUCT_REQUEST });
 
 
 
-const {data} = await axios.delete(`/product/${id}`,);
+const {data} = await api.delete(`/product/${id}`,);
 
 dispatch({
     type:DELETE_PRODUCT_SUCCESS,
@@ -160,7 +162,7 @@ headers: {"Content-Type":"application/json"},
 };
 
 
-const {data} = await axios.put(`/product/${id}`,
+const {data} = await api.put(`/product/${id}`,
 productData,
 config
 );
@@ -191,7 +193,7 @@ export const getBiddedProducts = () => async (dispatch) => {
         
 dispatch({ type:BIDDED_PRODUCT_REQUEST });
 
-const {data} = await axios.get(`/products/bidstatus`);
+const {data} = await api.get(`/products/bidstatus`);
 
 dispatch({
     type:BIDDED_PRODUCT_SUCCESS,
@@ -219,7 +221,7 @@ export const getSellerProducts = () => async (dispatch) => {
         
 dispatch({ type:SELLER_PRODUCT_REQUEST });
 
-const {data} = await axios.get(`/products/myproducts`);
+const {data} = await api.get(`/products/myproducts`);
 
 dispatch({
     type:SELLER_PRODUCT_SUCCESS,

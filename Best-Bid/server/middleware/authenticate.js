@@ -1,23 +1,27 @@
 const jwt = require("jsonwebtoken");
 const User = require("../model/userSchema");
+const admin = require('firebase-admin');
+const serviceAccount = require("../credentials.json");
 // const { response } = require("express");
 
 /*THIS FILE IS FOR AUTHENTICATION TOKE VERIFICATION -> AT ANI TIME USER ID MUSTR BE VERIFY WITH CURRENT TOKE  ID THEN ONLY WE CAN RETRAIN INFORMATION FROM CURRRENT USER ID*/
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
 
 const authenticate = async (req, res, next) => {
 
     try {
 
         // HERE WE GET CURRENT TOKEN FROM JWT TOKEN
-        const token = req.cookies.jwtoken;
-        // console.log("sdsdsd");
-
-
-        // TO VERIFY TOKEN -> verify() FUNCTION CALLED INSIDE JWT
-        const verifyToken = jwt.verify(token, process.env.SECRET_KEY);
-
-        // HERE WE GOT ALL INFORMATION ABOUT CURRENT USER INSIDE rootUser
-        const rootUser = await User.findOne({ _id: verifyToken._id, "tokens.token": token });
+        const idToken = req.headers.authorization.split('Bearer ')[1];
+           
+        // Verify the Firebase ID token
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        const userID = decodedToken.uid;
+        console.log(userID)
+        // Find the user by their Firebase UID
+        const rootUser = await User.findOne({ firebaseUID: userID });
         // For test
 
         if (!rootUser) { throw new Error('User Not Found') }
@@ -27,7 +31,7 @@ const authenticate = async (req, res, next) => {
         // console.log(`start root usr`);
         // console.log(rootUser);
         // console.log(`end root usr`);
-        req.token = token;
+        req.token = idToken;
         req.rootUser = rootUser;
         req.userID = rootUser._id;
 
@@ -36,6 +40,7 @@ const authenticate = async (req, res, next) => {
 
 
     } catch (err) {
+        console.log(err)
         console.log(`error token verification`);
         res.status(401).send('Unorthorised: No token provided');
     }

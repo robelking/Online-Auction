@@ -10,7 +10,7 @@ import { UserContext } from '../../App';
 import { useAlert } from 'react-alert';
 import { auth, provider } from "../../firebase"
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { FaRegistered } from 'react-icons/fa';
 
 
@@ -89,7 +89,8 @@ const Signup = () => {
         // Signed in 
         const user = userCredential.user;
         localStorage.setItem('user', JSON.stringify(user));
-        history.push('/')
+        // history.push('/')
+        window.location.reload()
         // ...
       })
       .catch((error) => {
@@ -126,19 +127,7 @@ const Signup = () => {
 
   }
 
-  //Google Authentication
-  // const handleGoogle = () => {
-  //   console.log("google auth");
-  //   signInWithPopup(auth, provider).then((data) => {
-  //     setGoogle(data.user.email)
-  //     localStorage.setItem("email", data.user.email)
-  //     history.push("/")
-  //   })
-  // }
-  // useEffect(() => {
-  //   setGoogle(localStorage.getItem("email"))
-
-  // }, [])
+    
 
   const handleGoogle = async (e) => {
     e.preventDefault();
@@ -147,7 +136,12 @@ const Signup = () => {
         provider
       ).then((response) => {
         const data = response.user;
-        axios.post("http://localhost:5000/google",  data )
+        axios.post("http://localhost:5000/google",  data, {
+          headers: {
+            "Content-type": "application/json"
+          }
+    
+        } )
       })
         .then((user) => {
           alert.success("Registered successfully")
@@ -160,22 +154,11 @@ const Signup = () => {
       alert.error(error.response.data.error)
     })
 
-    // signInWithPopup(auth, provider).then((data) => {
-    //   const email = data.user.email;
-    //   axios.post("http://localhost:5000/register", { email })  // Sending data to the backend
-    //     .then(response => {
-    //       history.push("/");
-    //     })
-    //     .catch((err) => {
-    //       // Handle error
-    //       console.log(err)
-    //       alert.error("Registerd Unsuccessfuly ")
-    //     });
-    // });
+   
   }
 
   useEffect(() => {
-    axios.get("http://localhost:5000/register")
+    axios.get("http://localhost:5000/google")
       .then(response => {
         setGoogle(response.data.email);
       })
