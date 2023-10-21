@@ -55,6 +55,41 @@
   
 }
 
+//Cart-Notification
+.cart, .noti{
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  bottom: -5px;
+}
+.noti-quantity{
+  position: absolute;
+  top: -13px;
+  right: -16px;
+  width: 27px;
+  height:27px;
+  background: red;
+  color: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+}
+
+.cart-quantity{
+  position: absolute;
+  top: -13px;
+  right: -19px;
+  width: 27px;
+  height:27px;
+  background: red;
+  color: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+}
 
 
 // DropDown

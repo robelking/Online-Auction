@@ -262,57 +262,45 @@ var winStatus;
 // PLACE BID ON PRODUCTS
 // placeBidOnProduct
 
-exports.placeBidOnProduct = catchAsyncErrors(async  (req ,res , next) => {
+exports.placeBidOnProduct = catchAsyncErrors(async  (req ,res) => {
     console.log(`Place Bid  On Product Function from Route Called`);
 
 
-try {
-    // HERE WE GET CURRENT TOKEN FROM JWT TOKEN
-const token =  req.cookies.jwtoken;
-    const verifyToken = jwt.verify(token , process.env.SECRET_KEY);
-const rootUser  = await User.findOne({ _id: verifyToken._id , "tokens.token": token});
-if(!rootUser){    throw new Error('User Not Found')}
-req.token = token;
-req.rootUser = rootUser;
-req.userID = rootUser._id;
-} catch (err) {
-    console.log(`error token verification`);
-    res.status(401).send('Unorthorised: No token provided');
-}
-
-
-console.log(req.body);
-// This body Contains Product Id and bid Ammount
-
-var bid = {
-    bidder : req.userID,
-    bid : req.body.bidAmmount,
-    time : Date.now(),
-}
-
-console.log(bid);
-
-let product = await Product.findById(req.body.productId);
-
-    if(!product){
-        return next(new ErrorHander("Product Not Found" , 404));
-     }
-
-
-// UPDATE BID ON PRODUCTS
-product = await Product.findByIdAndUpdate(req.body.productId , 
-    {
-$push : { bids : bid}
+    try {
+      const bid = {
+        bidder: req.userID,
+        bid: req.body.bidAmmount,
+        time: Date.now(),
+      };
+    
+      
+    
+      let product = await Product.findById(req.body.productId);
+    
+      if (!product) {
+        return next(new ErrorHander('Product Not Found', 404));
+      }
+    
+      // UPDATE BID ON PRODUCTS
+      product = await Product.findByIdAndUpdate(
+        req.body.productId,
+        {
+          $push: { bids: bid },
+        },
+        {
+          new: true,
+          runValidators: true,
+          useFindAndModify: false,
+        }
+      );
+    
+      res.status(201).json({
+        success: true,
+        product,
+      });
+    } catch (err) {
+      console.error('Error verifying Firebase ID token:', err);
+      res.status(401).send('Unauthorized: No valid token provided');
     }
-   , {
-    new:true,
-    runValidators:true,
-    useFindAndModify:false
-});
-
-    res.status(201).json({
-        success:true,
-        product
-    });
 
 });

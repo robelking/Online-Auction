@@ -2,12 +2,15 @@ import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
 import "./navbarstyle.scss";
 import { RiAuctionFill } from 'react-icons/ri';
+import { AiOutlineShoppingCart } from 'react-icons/ai';
+import { MdNotifications } from 'react-icons/md';
 import { UserContext } from '../../App';
+import { useSelector } from 'react-redux';
 
 
 const Navbar = () => {
   const { state, dispatch } = useContext(UserContext);
-
+  const {cartTotalQuantity} = useSelector(state => state.cart);
 
   const RenderMenu = () => {
     console.log(`state is ${state}`);
@@ -88,6 +91,15 @@ const Navbar = () => {
 
             </ul>
           </li>
+
+          <li className='dropdown navitem px-3 mx-auto licls'>
+            <NavLink to="/cart" className='nav-link' > <div className='cart'> <AiOutlineShoppingCart className='cart-icon' style={{width:'25px', height:'25px'}} /> <span className='cart-quantity'>{cartTotalQuantity}</span></div> </NavLink>
+            
+          </li>
+
+          {/* <li className='dropdown navitem px-3 mx-auto licls'>
+            <NavLink to="" className='nav-link' > <div className='noti'> <MdNotifications className='noti-icon' style={{width:'25px', height:'25px'}} /> <span className='noti-quantity'>4</span></div> </NavLink>
+          </li> */}
 
         </>
       )

@@ -11,16 +11,16 @@ import { useAlert } from 'react-alert';
 import { auth, provider } from "../../firebase"
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { FaRegistered } from 'react-icons/fa';
+import { AiOutlineEyeInvisible } from '@ant-design/icons';
+import api from '../../axiosInstance';
 
-
-// import {RiLockPasswordFill} from 'react-icons/ri';
 
 
 const Signup = () => {
   const alert = useAlert();
   const { state, dispatch } = useContext(UserContext);
   const [flag, setFlag] = useState(0);
+ 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [google, setGoogle] = useState("");
@@ -30,9 +30,8 @@ const Signup = () => {
   const [user, setUser] = useState({
     name: "", email: "", phone: "", password: "", cpassword: ""
   });
-  // , 
 
-  let name, value;
+
 
   const handleInputs = (e) => {
     const { name, value } = e.target
@@ -45,30 +44,30 @@ const Signup = () => {
 
     const { name, email, phone, password, cpassword } = user;
 
-    await axios.post("http://localhost:5000/register", {
-      headers: {
-        "Content-type": "application/json"
-      },
-      body: {
-        name, email, phone: '012346', password, cpassword
-      }
-
-    }).then(async (res) => {
-      await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      ).then((user) => {
-        alert.success("Registerd Successfuly")
-        setFlag(!flag)
-      }).catch((err) => {
-        console.log(err)
-        alert.error("Registerd Unsuccessfuly ")
-      })
-    }).catch((error) => {
-      console.log(error)
-      alert.error(error.response.data.error)
-    })
+    try {
+      // Create the user with Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUID = userCredential.user.uid;
+  
+      // Send the user data to your server
+      await api.post("/register", {
+        body: {
+              name, email, phone: '012346', password, cpassword, firebaseUID 
+            }
+        // Include Firebase User ID in the data
+      }).then((user) => {
+            alert.success("Registerd Successfuly")
+            setFlag(!flag)
+          }).catch((err) => {
+            console.log(err)
+            alert.error("Registerd Unsuccessfuly ")
+          })
+  
+    
+    } catch (error) {
+      console.error(error);
+      alert.error(" Unsuccessful Registration");
+    }
 
 
   }
@@ -78,11 +77,6 @@ const Signup = () => {
   // signin Page
 
   const loginUser = async (e) => {
-
-    //   if(this.state.value.length < 8) {
-    //     return false;
-    // }
-
     e.preventDefault();
     signInWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
@@ -99,31 +93,6 @@ const Signup = () => {
         console.log(errorCode)
         alert.error(errorMessage)
       });
-    // const res = await fetch('/signin', {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-type": "application/json"
-    //   },
-    //   body: {
-    //     email,
-    //     password
-    //   }
-    // });
-
-    // const data = res.json();
-
-    // if (res.status === 400 || !data) {
-    //   // window.alert("Invalid Credential");
-    //   alert.error("Invalid Credential");
-
-    // } else {
-    //   dispatch({ type: "USER", payload: true });
-    //   // window.alert("login Successful");
-    //   alert.success("login Successful");
-
-    //   history.push('/');
-
-    // }
 
   }
 
@@ -131,34 +100,41 @@ const Signup = () => {
 
   const handleGoogle = async (e) => {
     e.preventDefault();
-     await signInWithPopup(
-        auth,
-        provider
-      ).then((response) => {
-        const data = response.user;
-        axios.post("http://localhost:5000/google",  data, {
-          headers: {
-            "Content-type": "application/json"
-          }
-    
-        } )
-      })
+    // const { name, email, phone, firebaseUID, profile } = user;
+      try {
+        const googleData = await signInWithPopup(
+          auth,
+          provider
+        )
+        
+        await api.post("/google", {
+          body: {
+                
+                googleData, phone: '12345'
+              }
+          // Include Firebase User ID in the data
+        })
         .then((user) => {
-          alert.success("Registered successfully")
-          setFlag(!flag)
-        }).catch((err) => {
-          console.log(err)
-          alert.error("Registered unsuccessfully")
-        }).catch((error) => {
-      console.log(error)
-      alert.error(error.response.data.error)
-    })
-
-   
+              alert.success("Registerd Successfuly")
+              setFlag(!flag)
+              localStorage.setItem('user', JSON.stringify(user));
+              window.location.reload()
+            }).catch((err) => {
+              console.log(err)
+              alert.error("Registerd Unsuccessfuly ")
+            })
+    
+            
+      } 
+      catch (error) {
+        console.error(error);
+        alert.error(" Unsuccessful Registration");
+      }
+ 
   }
 
   useEffect(() => {
-    axios.get("http://localhost:5000/google")
+    api.get("/google")
       .then(response => {
         setGoogle(response.data.email);
       })

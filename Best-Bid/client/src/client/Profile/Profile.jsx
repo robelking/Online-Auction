@@ -4,9 +4,10 @@ import { NavLink, useHistory } from 'react-router-dom';
 import Img from "../images/values-1.png";
 import ProfileImg from "../images/profile-icon-png-899.png";
 import { AiOutlineUpload, AiFillDelete } from 'react-icons/ai';
-import { BsCloudUploadFill } from 'react-icons/bs';
+import { BsCloudUploadFill, BsPersonFillUp } from 'react-icons/bs';
 import MetaData from '../MetaData/MetaData';
-import axios from 'axios';
+import { useAlert } from 'react-alert';
+import api from '../../axiosInstance';
 
 
 
@@ -18,8 +19,9 @@ const Profile = () => {
   const history = useHistory();
 
   /*USESTATE FOR -> RECIVE AN USER OBJECT AS "DATA" -> ASSIGN DINAMICALLY TO THAT -> AFTER THAT TO CHANGE VALUE USE STATE USE*/
+  const alert = useAlert();
   const [userData, setUserData] = useState({});
-
+  
   const [name, setName] = useState({});
   const [email, setEmail] = useState({});
   const [phone, setPhone] = useState({});
@@ -28,57 +30,32 @@ const Profile = () => {
   const [newPassword, setNewPassword] = useState({});
   const [confirmPassword, setconfirmPassword] = useState({});
 
+  const [isInputVisible, setInputVisible] = useState(false);
+  const [image, setImage] = useState('');
+  const [profile, setProfile] = useState('');
 
 
   const callProfilePage = async () => {
+    console.log('call profile page is called');
 
-    // try {
-    //   const res = await fetch('/about', {
-    //     method: "GET",
-    //     headers: {
-    //       Accept: "application/json",
-    //       "Content-Type": "application/json"
-    //     },
-    //     credentials: "include"
-    //   });
-    //   const data = await res.json();
-    //   console.log(data);
-    //   setUserData(data);
-    //   setName(data.name);
-    //   setEmail(data.email);
-    //   setPhone(data.phone);
-    //   // console.log(`data send to backend`);
-
-    //   if (!res.status === 200) {
-    //     const error = new Error(res.error);
-    //     throw error;
-
-    //   }
-
-
-    // } catch (err) {
-    //   console.log(err);
-    //   history.push('/signup');
-    // }
-    const url = "http://localhost:5000"
-    const token = 'get token from localstorage'
     try {
-      const response = await axios(`${url}/about`, {
-        method: "GET",
+      const response = await api.get(`/about`, {
+
         headers: {
           Accept: 'application/json',
-          'Content-Type': 'application/json',
+
           // 'Authorization': `Bearer ${token}`,
         },
         withCredentials: true,
       });
 
       const data = await response.data;
-      console.log(data);
+      // console.log(data);
       setUserData(data);
       setName(data.name);
       setEmail(data.email);
       setPhone(data.phone);
+      setProfile(data.profile);
 
       if (response.status !== 200) {
         const error = new Error(response.statusText);
@@ -98,37 +75,97 @@ const Profile = () => {
     callProfilePage();
   }, []);
 
+//Upload profile picture
+  const handleProfile= () => {
+    setInputVisible(true);
+  };
 
+  const convertToBase64 = async (e) => {
+    const reader = new FileReader();
 
-  // // Update User Profile
-  //   const updateUser =  async() => {
+    reader.readAsDataURL(e.target.files[0]);
+    reader.onload = () => {
+      
+      setImage(reader.result);
+    };
+    reader.onerror = (error) => {
+      console.log(error);
+    }
+  }
 
-  // // console.log(name , email , phone);
+  const uploadImage = async () => {
 
-  //  }
+    try{
+      const res = await api.put("/upload/profile", {
 
+        body: {
+          imageUrl: image
+        }
+  
+      });
+      window.location.reload();
+      window.location.href = "/profile";
+      // console.log(data);
+      if (res.status !== 200) {
+        const error = new Error(res.statusText);
+        throw error;
+      }
+      else {
+        window.alert("Profile Picture Uploaded");
+        
+      }
+      
+  }
+   catch (err) {
+    console.log(err);
+    
+  }
 
+ };
 
+ const deleteImage = async () => {
+  
+  setImage("")
 
-  const updateUser = async () => {
+  try{
+    const res = await api.put("/delete/profile", {
 
-    // console.log(`email is ${email}`);
-    // console.log(`phone is ${phone}`);
-
-    // console.log(`name is ${name}`);
-
-
-    const res = await fetch("/me/update", {
-      method: "PUT",
-      headers: {
-        "Content-type": "application/json"
-      },
-      body: JSON.stringify({
-        name, email, phone
-      })
+      body: {
+        imageUrl: image
+      }
 
     });
+    window.location.reload();
+    window.location.href = "/profile";
+    // console.log(data);
+    if (res.status !== 200) {
+      const error = new Error(res.statusText);
+      throw error;
+    }
+    else {
+      window.alert("Profile Picture deleted");
+      
+    }
+    
+}
+ catch (err) {
+  console.log(err);
+  
+}
 
+}; 
+
+
+  // Update User
+  const updateUser = async () => {
+
+    const res = await api.put("/me/update", {
+
+      body: {
+        name, phone, email
+      }
+
+    });
     // console.log(data);
     if (res.status === 400) {
       window.alert("Invalid credential");
@@ -141,39 +178,21 @@ const Profile = () => {
 
     }
 
-
-
   };
-
-
-
-  // passwordChangeFun
-  // const passwordChangeFun = () => {
-  //   console.log(oldPassword , newPassword  , confirmPassword);
-  // }
 
 
   // Update Password
   const passwordChangeFun = async () => {
 
-    // console.log(`email is ${email}`);
-    // console.log(`phone is ${phone}`);
+    const res = await api.put("/password/update", {
 
-    // console.log(`name is ${name}`);
-
-
-    const res = await fetch("/password/update", {
-      method: "PUT",
-      headers: {
-        "Content-type": "application/json"
-      },
       body: JSON.stringify({
         oldPassword, newPassword, confirmPassword
       })
 
     });
 
-    // console.log(data);
+   
     if (res.status === 400) {
       window.alert("Invalid credential");
       console.log("Invalid credential");
@@ -183,8 +202,6 @@ const Profile = () => {
       console.log("Password Updated");
 
     }
-
-
 
   };
 
@@ -213,7 +230,8 @@ const Profile = () => {
                 <div className="cardcontainer ">
                   <div className="card-body profile-card pt-4 d-flex flex-column align-items-center profileimg">
 
-                    <img src={ProfileImg} alt="Profile" className="rounded-circle" />
+                  {profile == '' || profile == null? <img src={ProfileImg} alt="Profile" className="rounded-circle" /> : <img style={{ width: '120px', height: '120px', borderRadius: '100%'}} src={profile} />}
+                    {/* <img src={ProfileImg} alt="Profile" className="rounded-circle" /> */}
                     <h2>{userData.name}</h2>
                     <h3>User</h3>
 
@@ -281,14 +299,27 @@ const Profile = () => {
                         <div className="row mb-3">
                           <label for="profileImage" className="col-md-4 col-lg-3 col-form-label">Profile Image</label>
                           <div className="col-md-8 col-lg-9">
-                            <img src={ProfileImg} alt="Profile" />
-                            <div className="pt-2">
-                              <a href="#" className="btn btn-primary btn-sm icn" title="Upload new profile image">
-                                <BsCloudUploadFill />
-                              </a>
-                              <a href="#" className="btn btn-danger btn-sm icn" title="Remove my profile image">
+                            {image == '' || image == null? <img src={ProfileImg} alt="Profile" /> : <img width={100} height={100} src={image} />}
+                            
+                            <div className="pt-2" >
+                              <button className="btn btn-primary btn-sm icn " title="Upload new profile image" onClick={handleProfile} style={{ marginRight: '15px' }}>
+
+                                <BsPersonFillUp />
+                              </button>
+
+                              <button className="btn btn-danger btn-sm icn" title="Remove my profile image" onClick={deleteImage} style={{ marginRight: '10px' }}>
                                 <AiFillDelete />
-                              </a>
+                              </button>
+
+                              {isInputVisible && (
+                                <div style={{marginTop: '10px' }}>
+                                  <input type="file" accept='image/*' onChange={convertToBase64} />
+
+                                  <button className="btn btn-secondary btn-sm icn" onClick={uploadImage} >
+                                    <BsCloudUploadFill /> Upload
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -333,13 +364,6 @@ const Profile = () => {
                             />
                           </div>
                         </div>
-
-
-
-
-
-
-
 
                         <div className="text-center">
                           <button className="btn btn-primary" onClick={updateUser} >Save Changes</button>

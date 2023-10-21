@@ -19,7 +19,8 @@ const Contact = () => {
 
     try { 
       const res = await api.get('/getdata');
-      const data = await res.json();
+      console.log(res);
+      const data = await res.data;
       console.log(data);
       setUserData({ ...userData, name: data.name, email: data.email });
       // console.log(`data send to backend`);
@@ -64,17 +65,14 @@ const Contact = () => {
     e.preventDefault();
 
     const { name, email, subject, message } = userData;
-    const res = await fetch('/contact', {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+    const res = await api.post('/contact', {
+      
       body: JSON.stringify({
         name, email, subject, message
       })
     });
 
-    const data = await res.json();
+    const data = await res.data;
 
     if (!data) {
       console.log(`message not send `);

@@ -16,6 +16,7 @@ import Home from "./client/HomePage/Home";
 import About from "./client/AboutPage/About";
 import Service from "./client/Services/Service";
 import Contact from "./client/ContactPage/Contact";
+import Cart from "./client/Cart/cart";
 import Feedback from './client/Feedback/Feedback';
 import Addlot from "./client/AddLot/Addlot";
 import UpdateLot from "./client/UpdateLots/UpdateLot";
@@ -35,6 +36,8 @@ import { initialState, reducer } from "./client/Reducer/UseReducer";
 import '../node_modules/font-awesome/css/font-awesome.min.css';
 import '../node_modules/font-awesome/css/font-awesome.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
+import { ToastContainer } from 'react-toastify';
+import "../node_modules/react-toastify/dist/ReactToastify.css";
 
 
 
@@ -60,7 +63,7 @@ export const UserContext = createContext();
 
 const Routing = () => {
   return (
-
+    
     <Switch>
       {!localStorage.getItem('user') ?
         <>
@@ -70,6 +73,7 @@ const Routing = () => {
         </>
         :
         <>
+        <ToastContainer />
           <Route exact path="/" component={Home} />
           <Route exact path="/addlot" component={Addlot} />
           <Route exact path="/updatelot" component={UpdateLot} />
@@ -85,6 +89,7 @@ const Routing = () => {
 
           <Route exact path="/profile" component={Profile} />
           <Route exact path="/logout" component={Logout} />
+          <Route exact path="/cart" component={Cart} />
           {/* <Route exact path="/signin" component={Signup} /> */}
           {/* <Route exact path="/signup" component={Signup} /> */}
           <Route exact path="/product/:id" component={ProductDetails} />

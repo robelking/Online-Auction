@@ -28,6 +28,14 @@ const userSchema = mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    firebaseUID: {
+        type: String,
+        required: true,
+        unique: true, // Ensures uniqueness of Firebase user IDs
+      },
+      profile:{
+        type: String
+      }
     // messages: [{
 
 

@@ -30,7 +30,7 @@ router.route("/products/bidstatus").get(authenticate ,getBiddedProduct);
 
 
 // PLACE BID ON PRODUCT
-router.route("/products/bid").post(placeBidOnProduct);
+router.route("/products/bid").post(authenticate, placeBidOnProduct);
 
 
 // // PLACE BID ON PRODUCT

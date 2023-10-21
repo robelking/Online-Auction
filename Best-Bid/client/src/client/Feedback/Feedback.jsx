@@ -15,8 +15,8 @@ const Feedback = () => {
 
 		try {
 		  const res = await api.get('/getdata');
-		  const data = await res.json();
-		  console.log(data);
+		  const data = await res.data;
+		//   console.log(data);
 		  setUserData({ ...userData, name: data.name, email: data.email });
 		  // console.log(`data send to backend`);
 	
@@ -58,20 +58,16 @@ const handleInputs = (e) => {
 
   const feedbackForm = async (e) => {
     e.preventDefault();
-
+	console.log('feedback form called')
     const { name, email, subject, message } = userData;
-    const res = await fetch('/feedback', {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
+    const res = await api.post('/feedback', {
+     
+      body: ({
         name, email, subject, message
       })
     });
 
-    const data = await res.json();
-
+    const data = await res.data;
     if (!data) {
       console.log(`message not send `);
     } else {

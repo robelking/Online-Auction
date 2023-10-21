@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from "axios";
 import { useAlert } from 'react-alert';
-
+import api from '../../axiosInstance'
 
 import { useHistory } from "react-router-dom";
 
@@ -23,7 +23,7 @@ const PlaceBid = ({product}) => {
         myForm.set("bidAmmount" , ammount);
           
 console.log(myForm);
-        axios({
+        api({
             method: "post",
             url: "/products/bid",
             data: myForm,
